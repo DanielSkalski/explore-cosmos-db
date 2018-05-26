@@ -8,6 +8,5 @@ namespace UsdaCosmos
         public NutrientDefinition Definition { get; set; }
 
         public double AmountInHundredGrams { get; set; }
-
     }
 }

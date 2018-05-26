@@ -4,8 +4,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.EnvironmentVariables;
-using Microsoft.Extensions.Configuration.Json;
 using System.Globalization;
 
 namespace UsdaCosmos
@@ -32,14 +30,7 @@ namespace UsdaCosmos
 
             Console.WriteLine("Loading food groups...");
 
-            FoodGroup[] groups = await transformer.Transform<FoodGroup>(config["USDA_FOOD_GROUP"], arr =>
-            {
-                return new FoodGroup
-                {
-                    Code = arr[0],
-                    Description = arr[1]
-                };
-            });
+            FoodGroup[] groups = await loadFoodGroupsAsync(config);
 
             Console.WriteLine($"Parsed {groups.Length} food groups.");
             Console.WriteLine("Importing food groups...");
@@ -47,32 +38,12 @@ namespace UsdaCosmos
 
             Console.WriteLine("Loading weights...");
 
-            Weight[] weights = await transformer.Transform<Weight>(config["USDA_WEIGHT"], arr =>
-            {
-                return new Weight
-                {
-                    FoodId = arr[0],
-                    Sequence = arr[1],
-                    Amount = double.Parse(arr[2], CultureInfo.InvariantCulture),
-                    Description = arr[3],
-                    WeightGrams = double.Parse(arr[4], CultureInfo.InvariantCulture)
-                };
-            });
+            Weight[] weights = await loadWeightsAsync(config);
 
             Console.WriteLine($"Parsed {weights.Length} weights.");
             Console.WriteLine("Loading nutrient definitions...");
 
-            NutrientDefinition[] definitions = await transformer.Transform<NutrientDefinition>(config["USDA_NUTRIENT_DEFINITIONS"], arr =>
-            {
-                return new NutrientDefinition
-                {
-                    NutrientId = arr[0],
-                    UnitOfMeasure = arr[1],
-                    TagName = arr[2],
-                    Description = arr[3],
-                    SortOrder = int.Parse(arr[5], CultureInfo.InvariantCulture)
-                };
-            });
+            NutrientDefinition[] definitions = await loadNutrientDefinitionsAsync(config);
 
             Console.WriteLine("Importing nutrient definitions...");
             await importer.ImportDefinitions(config, definitions);
@@ -80,15 +51,7 @@ namespace UsdaCosmos
             Console.WriteLine($"Parsed {definitions.Length} definitions.");
             Console.WriteLine("Loading nutrient data...");
 
-            Nutrient[] nutrients = await transformer.Transform<Nutrient>(config["USDA_NUTRIENT_DATA"], arr =>
-            {
-                return new Nutrient
-                {
-                    FoodId = arr[0],
-                    NutrientId = arr[1],
-                    AmountInHundredGrams = double.Parse(arr[2], CultureInfo.InvariantCulture)
-                };
-            });
+            Nutrient[] nutrients = await loadNutrientsAsync(config);
 
             Console.WriteLine($"Parsed {nutrients.Length} nutrient data entries.");
             Console.WriteLine("Correlating nutrient data to definitions ...");
@@ -103,7 +66,7 @@ namespace UsdaCosmos
             Console.WriteLine("Loading food descriptions...");
 
             var foodLookup = new Dictionary<string, FoodItem>();
-            FoodItem[] food = await transformer.Transform<FoodItem>(config["USDA_FOOD_ITEM"], arr =>
+            FoodItem[] food = await transformer.Transform(config["USDA_FOOD_ITEM"], arr =>
             {
                 var item = new FoodItem
                 {
@@ -180,6 +143,65 @@ namespace UsdaCosmos
 
             Console.WriteLine("Importing food items to CosmosDB (this may take several minutes)...");
             await importer.ImportFood(config, food);
+        }
+
+        private static async Task<Nutrient[]> loadNutrientsAsync(IConfigurationRoot config)
+        {
+            var transformer = new Transformer();
+            return await transformer.Transform(config["USDA_NUTRIENT_DATA"], arr =>
+            {
+                return new Nutrient
+                {
+                    FoodId = arr[0],
+                    NutrientId = arr[1],
+                    AmountInHundredGrams = double.Parse(arr[2], CultureInfo.InvariantCulture)
+                };
+            });
+        }
+
+        private static async Task<NutrientDefinition[]> loadNutrientDefinitionsAsync(IConfigurationRoot config)
+        {
+            var transformer = new Transformer();
+            return await transformer.Transform(config["USDA_NUTRIENT_DEFINITIONS"], arr =>
+            {
+                return new NutrientDefinition
+                {
+                    NutrientId = arr[0],
+                    UnitOfMeasure = arr[1],
+                    TagName = arr[2],
+                    Description = arr[3],
+                    SortOrder = int.Parse(arr[5], CultureInfo.InvariantCulture)
+                };
+            });
+        }
+
+        private static async Task<Weight[]> loadWeightsAsync(IConfigurationRoot config)
+        {
+            var transformer = new Transformer();
+            return await transformer.Transform<Weight>(config["USDA_WEIGHT"], arr =>
+            {
+                return new Weight
+                {
+                    FoodId = arr[0],
+                    Sequence = arr[1],
+                    Amount = double.Parse(arr[2], CultureInfo.InvariantCulture),
+                    Description = arr[3],
+                    WeightGrams = double.Parse(arr[4], CultureInfo.InvariantCulture)
+                };
+            });
+        }
+
+        private static async Task<FoodGroup[]> loadFoodGroupsAsync(IConfigurationRoot config)
+        {
+            var transformer = new Transformer();
+            return await transformer.Transform<FoodGroup>(config["USDA_FOOD_GROUP"], arr =>
+            {
+                return new FoodGroup
+                {
+                    Code = arr[0],
+                    Description = arr[1]
+                };
+            });
         }
     }
 }

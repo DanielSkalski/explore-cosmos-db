@@ -10,7 +10,7 @@ namespace UsdaCosmos
             var documents = new List<string[]>();
             var lines = src.Split(new char[] { '\r', '\n'});
             foreach(var line in lines) {
-                if (line.Trim() != "") {
+                if (line.Trim() != string.Empty) {
                     var fields = line.Split('^');
                     var document = new List<string>();
                     foreach(var field in fields)

@@ -1,7 +1,4 @@
 using System;
-using MongoDB.Driver;
-using System.Security.Authentication;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
@@ -30,19 +27,20 @@ namespace UsdaCosmos
             }
             Console.WriteLine($"Successfully imported {itemCount} documents. Your collection is ready!");
         }
+
         public async Task ImportGroups(IConfigurationRoot config, FoodGroup[] groups)
         {
-            await this.Import<FoodGroup>(config, Collections.GetCollectionName<FoodGroup>(), groups);
+            await Import<FoodGroup>(config, Collections.GetCollectionName<FoodGroup>(), groups);
         }
 
         public async Task ImportDefinitions(IConfigurationRoot config, NutrientDefinition[] definitions)
         {
-            await this.Import<NutrientDefinition>(config, Collections.GetCollectionName<NutrientDefinition>(), definitions);
+            await Import<NutrientDefinition>(config, Collections.GetCollectionName<NutrientDefinition>(), definitions);
         }
 
         public async Task ImportFood(IConfigurationRoot config, FoodItem[] foods)
         {
-            await this.Import<FoodItem>(config, Collections.GetCollectionName<FoodItem>(), foods);
+            await Import<FoodItem>(config, Collections.GetCollectionName<FoodItem>(), foods);
         }
     }
 }
